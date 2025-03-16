@@ -1,0 +1,610 @@
+        -:    0:Source:main3.c
+        -:    0:Graph:main3.gcno
+        -:    0:Data:main3.gcda
+        -:    0:Runs:1
+        -:    1:#include <stdio.h>
+        -:    2:#include <stdlib.h>
+        -:    3:#include <time.h>
+        -:    4:#include <math.h>
+        -:    5:#include <string.h>
+        -:    6:
+        -:    7:// Define the size of the grid
+        -:    8:#define GRID_SIZE 4
+        -:    9:
+        -:   10:// Structure to hold the game state
+        -:   11:typedef struct
+        -:   12:{
+        -:   13:    int grid[GRID_SIZE][GRID_SIZE];
+        -:   14:    int gCurr;
+        -:   15:    int heuristicScore;
+        -:   16:    double logMax;
+        -:   17:    double logSecondMax;
+        -:   18:} GameState;
+        -:   19:
+        -:   20:// Structure to hold the return values of aStarAlgorithm
+        -:   21:typedef struct
+        -:   22:{
+        -:   23:    GameState gameState;
+        -:   24:    double iterations;
+        -:   25:} Tuple;
+        -:   26:
+        -:   27:// Function to initialize a GameState
+function initializeGameState called 7455 returned 100% blocks executed 100%
+     7455:   28:void initializeGameState(GameState *state, int initialGrid[GRID_SIZE][GRID_SIZE])
+        -:   29:{
+        -:   30:    // Copy the initial grid
+    37275:   31:    for (int i = 0; i < GRID_SIZE; i++)
+branch  0 taken 29820
+branch  1 taken 7455 (fallthrough)
+        -:   32:    {
+   149100:   33:        for (int j = 0; j < GRID_SIZE; j++)
+branch  0 taken 119280
+branch  1 taken 29820 (fallthrough)
+        -:   34:        {
+   119280:   35:            state->grid[i][j] = initialGrid[i][j];
+        -:   36:        }
+        -:   37:    }
+     7455:   38:    state->gCurr = 0;
+     7455:   39:    state->heuristicScore = 0;
+     7455:   40:    state->logMax = 0.0;
+     7455:   41:    state->logSecondMax = 0.0;
+     7455:   42:}
+        -:   43: 
+        -:   44:// Function to compare two GameStates for sorting
+function compareGameStates called 42455898 returned 100% blocks executed 100%
+ 42455898:   45:int compareGameStates(const void *a, const void *b)
+        -:   46:{
+ 42455898:   47:    GameState *stateA = (GameState *)a;
+ 42455898:   48:    GameState *stateB = (GameState *)b;
+ 42455898:   49:    if (stateA->heuristicScore != stateB->heuristicScore)
+branch  0 taken 37971852 (fallthrough)
+branch  1 taken 4484046
+ 37971852:   50:        return (stateA->heuristicScore > stateB->heuristicScore) ? -1 : 1;
+branch  0 taken 37902693 (fallthrough)
+branch  1 taken 69159
+  4484046:   51:    if (stateA->logMax != stateB->logMax)
+branch  0 taken 39957 (fallthrough)
+branch  1 taken 4444089
+    39957:   52:        return (stateA->logMax > stateB->logMax) ? -1 : 1;
+branch  0 taken 39948 (fallthrough)
+branch  1 taken 9
+  4444089:   53:    if (stateA->logSecondMax != stateB->logSecondMax)
+branch  0 taken 42037 (fallthrough)
+branch  1 taken 4402052
+    42037:   54:        return (stateA->logSecondMax > stateB->logSecondMax) ? -1 : 1;
+branch  0 taken 42021 (fallthrough)
+branch  1 taken 16
+  4402052:   55:    return 0;
+        -:   56:}
+        -:   57:
+        -:   58:// Function to generate a random tile in the grid
+function randomGenerate called 7456 returned 100% blocks executed 100%
+     7456:   59:void randomGenerate(int grid[GRID_SIZE][GRID_SIZE])
+        -:   60:{
+        -:   61:    int emptyTiles[GRID_SIZE * GRID_SIZE][2];
+     7456:   62:    int emptyCount = 0;
+    37280:   63:    for (int i = 0; i < GRID_SIZE; i++)
+branch  0 taken 29824
+branch  1 taken 7456 (fallthrough)
+        -:   64:    {
+   149120:   65:        for (int j = 0; j < GRID_SIZE; j++)
+branch  0 taken 119296
+branch  1 taken 29824 (fallthrough)
+        -:   66:        {
+   119296:   67:            if (grid[i][j] == 0)
+branch  0 taken 10931 (fallthrough)
+branch  1 taken 108365
+        -:   68:            {
+    10931:   69:                emptyTiles[emptyCount][0] = i;
+    10931:   70:                emptyTiles[emptyCount][1] = j;
+    10931:   71:                emptyCount++;
+        -:   72:            }
+        -:   73:        }
+        -:   74:    }
+        -:   75:
+     7456:   76:    if (emptyCount > 0)
+branch  0 taken 7456 (fallthrough)
+branch  1 taken 0
+        -:   77:    {
+     7456:   78:        int randomIndex = rand() % emptyCount;
+call    0 returned 7456
+     7456:   79:        int x = emptyTiles[randomIndex][0];
+     7456:   80:        int y = emptyTiles[randomIndex][1];
+        -:   81:
+        -:   82:        // 90% chance of 2, 10% chance of 4
+     7456:   83:        grid[x][y] = (rand() % 10 == 0) ? 4 : 2;
+call    0 returned 7456
+branch  1 taken 708 (fallthrough)
+branch  2 taken 6748
+        -:   84:    }
+     7456:   85:}
+        -:   86:
+        -:   87:// Function to merge tiles in a row or column
+function mergeTilesHelper called 89168 returned 100% blocks executed 93%
+    89168:   88:void mergeTilesHelper(int *line, int size, int mergedLine[GRID_SIZE])
+        -:   89:{
+    89168:   90:    int mergedCount = 0;
+   434036:   91:    for (int i = 0; i < size; i++)
+branch  0 taken 344868
+branch  1 taken 89168 (fallthrough)
+        -:   92:    {
+  344868*:   93:        if (line[i] == 0)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 344868
+    #####:   94:            continue;
+   344868:   95:        if (i + 1 < size && line[i] == line[i + 1] && line[i] != 0)
+branch  0 taken 258927 (fallthrough)
+branch  1 taken 85941
+branch  2 taken 7112 (fallthrough)
+branch  3 taken 251815
+branch  4 taken 7112 (fallthrough)
+branch  5 taken 0
+        -:   96:        {
+     7112:   97:            mergedLine[mergedCount++] = line[i] * 2;
+     7112:   98:            i++;
+        -:   99:        }
+        -:  100:        else
+        -:  101:        {
+   337756:  102:            mergedLine[mergedCount++] = line[i];
+        -:  103:        }
+        -:  104:    }
+        -:  105:    // Fill the rest with 0
+   100972:  106:    while (mergedCount < GRID_SIZE)
+branch  0 taken 11804
+branch  1 taken 89168 (fallthrough)
+        -:  107:    {
+    11804:  108:        mergedLine[mergedCount++] = 0;
+        -:  109:    }
+    89168:  110:}
+        -:  111:
+        -:  112:// Function to move tiles to the left
+function moveLeft called 5573 returned 100% blocks executed 100%
+     5573:  113:void moveLeft(int src[GRID_SIZE][GRID_SIZE], int dest[GRID_SIZE][GRID_SIZE])
+        -:  114:{
+    27865:  115:    for (int i = 0; i < GRID_SIZE; i++)
+branch  0 taken 22292
+branch  1 taken 5573 (fallthrough)
+        -:  116:    {
+        -:  117:        int tempRow[GRID_SIZE];
+    22292:  118:        int size = 0;
+   111460:  119:        for (int j = 0; j < GRID_SIZE; j++)
+branch  0 taken 89168
+branch  1 taken 22292 (fallthrough)
+        -:  120:        {
+    89168:  121:            if (src[i][j] != 0)
+branch  0 taken 87995 (fallthrough)
+branch  1 taken 1173
+        -:  122:            {
+    87995:  123:                tempRow[size++] = src[i][j];
+        -:  124:            }
+        -:  125:        }
+        -:  126:        int mergedRow[GRID_SIZE];
+    22292:  127:        mergeTilesHelper(tempRow, size, mergedRow);
+call    0 returned 22292
+   111460:  128:        for (int j = 0; j < GRID_SIZE; j++)
+branch  0 taken 89168
+branch  1 taken 22292 (fallthrough)
+        -:  129:        {
+    89168:  130:            dest[i][j] = mergedRow[j];
+        -:  131:        }
+        -:  132:    }
+     5573:  133:}
+        -:  134:
+        -:  135:// Function to move tiles to the right
+function moveRight called 5573 returned 100% blocks executed 100%
+     5573:  136:void moveRight(int src[GRID_SIZE][GRID_SIZE], int dest[GRID_SIZE][GRID_SIZE])
+        -:  137:{
+    27865:  138:    for (int i = 0; i < GRID_SIZE; i++)
+branch  0 taken 22292
+branch  1 taken 5573 (fallthrough)
+        -:  139:    {
+        -:  140:        int tempRow[GRID_SIZE];
+    22292:  141:        int size = 0;
+   111460:  142:        for (int j = GRID_SIZE - 1; j >= 0; j--)
+branch  0 taken 89168
+branch  1 taken 22292 (fallthrough)
+        -:  143:        {
+    89168:  144:            if (src[i][j] != 0)
+branch  0 taken 87995 (fallthrough)
+branch  1 taken 1173
+        -:  145:            {
+    87995:  146:                tempRow[size++] = src[i][j];
+        -:  147:            }
+        -:  148:        }
+        -:  149:        int mergedRow[GRID_SIZE];
+    22292:  150:        mergeTilesHelper(tempRow, size, mergedRow);
+call    0 returned 22292
+   111460:  151:        for (int j = GRID_SIZE - 1, k = 0; j >= 0; j--, k++)
+branch  0 taken 89168
+branch  1 taken 22292 (fallthrough)
+        -:  152:        {
+    89168:  153:            dest[i][j] = mergedRow[k];
+        -:  154:        }
+        -:  155:    }
+     5573:  156:}
+        -:  157:
+        -:  158:// Function to move tiles upwards
+function moveUp called 5573 returned 100% blocks executed 100%
+     5573:  159:void moveUp(int src[GRID_SIZE][GRID_SIZE], int dest[GRID_SIZE][GRID_SIZE])
+        -:  160:{
+    27865:  161:    for (int j = 0; j < GRID_SIZE; j++)
+branch  0 taken 22292
+branch  1 taken 5573 (fallthrough)
+        -:  162:    {
+        -:  163:        int tempCol[GRID_SIZE];
+    22292:  164:        int size = 0;
+   111460:  165:        for (int i = 0; i < GRID_SIZE; i++)
+branch  0 taken 89168
+branch  1 taken 22292 (fallthrough)
+        -:  166:        {
+    89168:  167:            if (src[i][j] != 0)
+branch  0 taken 87995 (fallthrough)
+branch  1 taken 1173
+        -:  168:            {
+    87995:  169:                tempCol[size++] = src[i][j];
+        -:  170:            }
+        -:  171:        }
+        -:  172:        int mergedCol[GRID_SIZE];
+    22292:  173:        mergeTilesHelper(tempCol, size, mergedCol);
+call    0 returned 22292
+   111460:  174:        for (int i = 0; i < GRID_SIZE; i++)
+branch  0 taken 89168
+branch  1 taken 22292 (fallthrough)
+        -:  175:        {
+    89168:  176:            dest[i][j] = mergedCol[i];
+        -:  177:        }
+        -:  178:    }
+     5573:  179:}
+        -:  180:
+        -:  181:// Function to move tiles downwards
+function moveDown called 5573 returned 100% blocks executed 100%
+     5573:  182:void moveDown(int src[GRID_SIZE][GRID_SIZE], int dest[GRID_SIZE][GRID_SIZE])
+        -:  183:{
+    27865:  184:    for (int j = 0; j < GRID_SIZE; j++)
+branch  0 taken 22292
+branch  1 taken 5573 (fallthrough)
+        -:  185:    {
+        -:  186:        int tempCol[GRID_SIZE];
+    22292:  187:        int size = 0;
+   111460:  188:        for (int i = GRID_SIZE - 1; i >= 0; i--)
+branch  0 taken 89168
+branch  1 taken 22292 (fallthrough)
+        -:  189:        {
+    89168:  190:            if (src[i][j] != 0)
+branch  0 taken 87995 (fallthrough)
+branch  1 taken 1173
+        -:  191:            {
+    87995:  192:                tempCol[size++] = src[i][j];
+        -:  193:            }
+        -:  194:        }
+        -:  195:        int mergedCol[GRID_SIZE];
+    22292:  196:        mergeTilesHelper(tempCol, size, mergedCol);
+call    0 returned 22292
+   111460:  197:        for (int i = GRID_SIZE - 1, k = 0; i >= 0; i--, k++)
+branch  0 taken 89168
+branch  1 taken 22292 (fallthrough)
+        -:  198:        {
+    89168:  199:            dest[i][j] = mergedCol[k];
+        -:  200:        }
+        -:  201:    }
+     5573:  202:}
+        -:  203:
+        -:  204:// Function to display the grid
+function displayGrid called 2 returned 100% blocks executed 100%
+        2:  205:void displayGrid(int grid[GRID_SIZE][GRID_SIZE])
+        -:  206:{
+       10:  207:    for (int i = 0; i < GRID_SIZE; i++)
+branch  0 taken 8
+branch  1 taken 2 (fallthrough)
+        -:  208:    {
+       40:  209:        for (int j = 0; j < GRID_SIZE; j++)
+branch  0 taken 32
+branch  1 taken 8 (fallthrough)
+        -:  210:        {
+       32:  211:            printf("%d\t", grid[i][j]);
+call    0 returned 32
+        -:  212:        }
+        8:  213:        printf("\n");
+call    0 returned 8
+        -:  214:    }
+        2:  215:}
+        -:  216:
+        -:  217:// Function to generate next states from the current state
+function generateNextStates called 5573 returned 100% blocks executed 96%
+     5573:  218:int generateNextStates(GameState currentState, GameState *nextStates)
+        -:  219:{
+     5573:  220:    int validMoves = 0;
+        -:  221:    // Define move functions to iterate through
+        -:  222:    // 0: left, 1: right, 2: up, 3: down
+    27865:  223:    for (int move = 0; move < 4; move++)
+branch  0 taken 22292
+branch  1 taken 5573 (fallthrough)
+        -:  224:    {
+        -:  225:        int movedGrid[GRID_SIZE][GRID_SIZE];
+        -:  226:        // Apply the move
+    22292:  227:        switch (move)
+branch  0 taken 5573
+branch  1 taken 5573
+branch  2 taken 5573
+branch  3 taken 5573
+branch  4 taken 0
+        -:  228:        {
+     5573:  229:        case 0:
+     5573:  230:            moveLeft(currentState.grid, movedGrid);
+call    0 returned 5573
+     5573:  231:            break;
+     5573:  232:        case 1:
+     5573:  233:            moveRight(currentState.grid, movedGrid);
+call    0 returned 5573
+     5573:  234:            break;
+     5573:  235:        case 2:
+     5573:  236:            moveUp(currentState.grid, movedGrid);
+call    0 returned 5573
+     5573:  237:            break;
+     5573:  238:        case 3:
+     5573:  239:            moveDown(currentState.grid, movedGrid);
+call    0 returned 5573
+     5573:  240:            break;
+        -:  241:        }
+        -:  242:
+        -:  243:        // Check if the move actually changed the grid
+    22292:  244:        int changed = 0;
+    97379:  245:        for (int i = 0; i < GRID_SIZE && !changed; i++)
+branch  0 taken 80589 (fallthrough)
+branch  1 taken 16790
+branch  2 taken 75087
+branch  3 taken 5502 (fallthrough)
+        -:  246:        {
+   361101:  247:            for (int j = 0; j < GRID_SIZE && !changed; j++)
+branch  0 taken 291614 (fallthrough)
+branch  1 taken 69487
+branch  2 taken 286014
+branch  3 taken 5600 (fallthrough)
+        -:  248:            {
+   286014:  249:                if (movedGrid[i][j] != currentState.grid[i][j])
+branch  0 taken 7454 (fallthrough)
+branch  1 taken 278560
+        -:  250:                {
+     7454:  251:                    changed = 1;
+        -:  252:                }
+        -:  253:            }
+        -:  254:        }
+        -:  255:
+    22292:  256:        if (changed)
+branch  0 taken 7454 (fallthrough)
+branch  1 taken 14838
+        -:  257:        {
+        -:  258:            // Find max and second max tile values
+     7454:  259:            int m = 0, k = 0;
+    37270:  260:            for (int i = 0; i < GRID_SIZE; i++)
+branch  0 taken 29816
+branch  1 taken 7454 (fallthrough)
+        -:  261:            {
+   149080:  262:                for (int j = 0; j < GRID_SIZE; j++)
+branch  0 taken 119264
+branch  1 taken 29816 (fallthrough)
+        -:  263:                {
+   119264:  264:                    if (movedGrid[i][j] > m)
+branch  0 taken 27557 (fallthrough)
+branch  1 taken 91707
+        -:  265:                    {
+    27557:  266:                        k = m;
+    27557:  267:                        m = movedGrid[i][j];
+        -:  268:                    }
+    91707:  269:                    else if (movedGrid[i][j] > k)
+branch  0 taken 14223 (fallthrough)
+branch  1 taken 77484
+        -:  270:                    {
+    14223:  271:                        k = movedGrid[i][j];
+        -:  272:                    }
+        -:  273:                }
+        -:  274:            }
+        -:  275:
+        -:  276:            // Generate a new random tile
+     7454:  277:            randomGenerate(movedGrid);
+call    0 returned 7454
+        -:  278:
+        -:  279:            // Calculate heuristic score (sum of all tiles)
+     7454:  280:            int h = 0;
+    37270:  281:            for (int i = 0; i < GRID_SIZE; i++)
+branch  0 taken 29816
+branch  1 taken 7454 (fallthrough)
+        -:  282:            {
+   149080:  283:                for (int j = 0; j < GRID_SIZE; j++)
+branch  0 taken 119264
+branch  1 taken 29816 (fallthrough)
+        -:  284:                {
+   119264:  285:                    h += movedGrid[i][j];
+        -:  286:                }
+        -:  287:            }
+        -:  288:
+        -:  289:            // Calculate log values
+    7454*:  290:            double logM = (m > 0) ? log2((double)m) : 0.0;
+branch  0 taken 7454 (fallthrough)
+branch  1 taken 0
+    7454*:  291:            double logK = (k > 0) ? log2((double)k) : 0.0;
+branch  0 taken 7454 (fallthrough)
+branch  1 taken 0
+        -:  292:
+        -:  293:            // Create new game state
+        -:  294:            GameState newState;
+     7454:  295:            initializeGameState(&newState, movedGrid);
+call    0 returned 7454
+     7454:  296:            newState.gCurr = currentState.gCurr + 1;
+     7454:  297:            newState.heuristicScore = h;
+     7454:  298:            newState.logMax = logM;
+     7454:  299:            newState.logSecondMax = logK;
+        -:  300:
+        -:  301:            // Add to nextStates array
+     7454:  302:            nextStates[validMoves] = newState;
+     7454:  303:            validMoves++;
+        -:  304:        }
+        -:  305:    }
+     5573:  306:    return validMoves;
+        -:  307:}
+        -:  308:
+        -:  309:// Function implementing the A* algorithm
+function aStarAlgorithm called 1 returned 100% blocks executed 93%
+        1:  310:Tuple aStarAlgorithm(GameState initialState)
+        -:  311:{
+        -:  312:    Tuple result;
+        -:  313:    // Initialize opened and closed lists
+        1:  314:    GameState *opened = NULL;
+        1:  315:    int openedCount = 0;
+        1:  316:    int openedCapacity = 10;
+        1:  317:    opened = (GameState *)malloc(openedCapacity * sizeof(GameState));
+        -:  318:
+        1:  319:    GameState *closed = NULL;
+        1:  320:    int closedCount = 0;
+        1:  321:    int closedCapacity = 10;
+        1:  322:    closed = (GameState *)malloc(closedCapacity * sizeof(GameState));
+        -:  323:
+        1:  324:    double count = 1;
+        -:  325:
+        -:  326:    // Add initial state to opened
+        1:  327:    opened[openedCount++] = initialState;
+        -:  328:
+     5574:  329:    while (openedCount > 0)
+branch  0 taken 5574
+branch  1 taken 0 (fallthrough)
+        -:  330:    {
+        -:  331:        // Sort opened list
+     5574:  332:        qsort(opened, openedCount, sizeof(GameState), compareGameStates);
+call    0 returned 5574
+        -:  333:
+        -:  334:        // Get and remove the first state
+     5574:  335:        GameState currentState = opened[0];
+        -:  336:        // Shift the opened list
+     5574:  337:        memmove(&opened[0], &opened[1], (openedCount - 1) * sizeof(GameState));
+     5574:  338:        openedCount--;
+        -:  339:
+        -:  340:        // Add to closed list
+     5574:  341:        if (closedCount >= closedCapacity)
+branch  0 taken 10 (fallthrough)
+branch  1 taken 5564
+        -:  342:        {
+       10:  343:            closedCapacity *= 2;
+       10:  344:            closed = (GameState *)realloc(closed, closedCapacity * sizeof(GameState));
+        -:  345:        }
+     5574:  346:        closed[closedCount++] = currentState;
+        -:  347:
+        -:  348:        // Check for goal state (2048 tile)
+     5574:  349:        int goalFound = 0;
+    27867:  350:        for (int i = 0; i < GRID_SIZE && !goalFound; i++)
+branch  0 taken 22294 (fallthrough)
+branch  1 taken 5573
+branch  2 taken 22294
+branch  3 taken 0 (fallthrough)
+        -:  351:        {
+   111468:  352:            for (int j = 0; j < GRID_SIZE && !goalFound; j++)
+branch  0 taken 89175 (fallthrough)
+branch  1 taken 22293
+branch  2 taken 89175
+branch  3 taken 0 (fallthrough)
+        -:  353:            {
+    89175:  354:                if (currentState.grid[i][j] == 2048)
+branch  0 taken 1 (fallthrough)
+branch  1 taken 89174
+        -:  355:                {
+        1:  356:                    result.gameState = currentState;
+        1:  357:                    result.iterations = count;
+        1:  358:                    free(opened);
+        1:  359:                    free(closed);
+        1:  360:                    return result;
+        -:  361:                }
+        -:  362:            }
+        -:  363:        }
+        -:  364:
+     5573:  365:        count++;
+        -:  366:
+        -:  367:        // Limit search depth
+     5573:  368:        if (count >= 100000)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 5573
+        -:  369:        {
+    #####:  370:            result.gameState = currentState;
+    #####:  371:            result.iterations = count;
+    #####:  372:            free(opened);
+    #####:  373:            free(closed);
+    #####:  374:            return result;
+        -:  375:        }
+        -:  376:
+        -:  377:        // Generate next states
+     5573:  378:        GameState *nextStates = (GameState *)malloc(4 * sizeof(GameState)); // Maximum 4 moves
+     5573:  379:        int numValidMoves = generateNextStates(currentState, nextStates);
+call    0 returned 5573
+        -:  380:
+    13027:  381:        for (int i = 0; i < numValidMoves; i++)
+branch  0 taken 7454
+branch  1 taken 5573 (fallthrough)
+        -:  382:        {
+        -:  383:            // Add to opened list
+     7454:  384:            if (openedCount >= openedCapacity)
+branch  0 taken 8 (fallthrough)
+branch  1 taken 7446
+        -:  385:            {
+        8:  386:                openedCapacity *= 2;
+        8:  387:                opened = (GameState *)realloc(opened, openedCapacity * sizeof(GameState));
+        -:  388:            }
+     7454:  389:            opened[openedCount++] = nextStates[i];
+        -:  390:        }
+     5573:  391:        free(nextStates);
+        -:  392:    }
+        -:  393:
+        -:  394:    // If no solution found
+    #####:  395:    result.gameState = initialState;
+    #####:  396:    result.iterations = count;
+    #####:  397:    free(opened);
+    #####:  398:    free(closed);
+    #####:  399:    return result;
+        -:  400:}
+        -:  401:
+function main called 1 returned 100% blocks executed 100%
+        1:  402:int main()
+        -:  403:{
+        1:  404:    srand(time(NULL));
+call    0 returned 1
+call    1 returned 1
+        -:  405:    // Initialize the grid with zeros
+        -:  406:    int initialGrid[GRID_SIZE][GRID_SIZE];
+        5:  407:    for (int i = 0; i < GRID_SIZE; i++)
+branch  0 taken 4
+branch  1 taken 1 (fallthrough)
+        -:  408:    {
+       20:  409:        for (int j = 0; j < GRID_SIZE; j++)
+branch  0 taken 16
+branch  1 taken 4 (fallthrough)
+        -:  410:        {
+       16:  411:            initialGrid[i][j] = 0;
+        -:  412:        }
+        -:  413:    }
+        -:  414:    // Generate two initial random tiles
+        1:  415:    randomGenerate(initialGrid);
+call    0 returned 1
+        1:  416:    randomGenerate(initialGrid);
+call    0 returned 1
+        -:  417:
+        -:  418:    // Create initial game state
+        -:  419:    GameState initialState;
+        1:  420:    initializeGameState(&initialState, initialGrid);
+call    0 returned 1
+        -:  421:
+        1:  422:    printf("Initial Grid:\n");
+call    0 returned 1
+        1:  423:    displayGrid(initialState.grid);
+call    0 returned 1
+        -:  424:
+        -:  425:    // Run A* algorithm
+        1:  426:    Tuple result = aStarAlgorithm(initialState);
+call    0 returned 1
+        -:  427:
+        1:  428:    printf("Final Grid:\n");
+call    0 returned 1
+        1:  429:    displayGrid(result.gameState.grid);
+call    0 returned 1
+        -:  430:
+        1:  431:    printf("Number of iterations: %f\n", result.iterations);
+call    0 returned 1
+        -:  432:
+        1:  433:    return 0;
+        -:  434:}

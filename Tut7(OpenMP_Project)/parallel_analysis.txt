@@ -1,0 +1,85 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  us/call  us/call  name    
+ 96.50     12.14    12.14   160603    75.59    75.59  randomGenerate
+  1.59     12.34     0.20                             etext
+  0.72     12.43     0.09                             main
+  0.24     12.46     0.03    80686     0.37     0.37  generateNextStates
+  0.24     12.49     0.03    71523     0.42     0.45  moveDown
+  0.24     12.52     0.03    70588     0.43     0.46  moveRight
+  0.16     12.54     0.02    69653     0.29     0.29  moveLeft
+  0.08     12.55     0.01  1421425     0.01     0.01  mergeTilesHelper
+  0.08     12.56     0.01   168693     0.06     0.06  compareGameStates
+  0.08     12.57     0.01    70754     0.14     0.18  moveUp
+  0.08     12.58     0.01                             aStarAlgorithm
+
+			Call graph
+
+
+granularity: each sample hit covers 4 byte(s) for 0.08% of 12.58 seconds
+
+index % time    self  children    called     name
+                                                 <spontaneous>
+[1]     98.9    0.20   12.25                 etext [1]
+               12.14    0.00  160601/160603      randomGenerate [2]
+                0.03    0.00   70588/70588       moveRight [5]
+                0.03    0.00   71523/71523       moveDown [6]
+                0.02    0.00   69653/69653       moveLeft [8]
+                0.01    0.00   70754/70754       moveUp [9]
+                0.01    0.00  168692/168693      compareGameStates [11]
+-----------------------------------------------
+                0.00    0.00       2/160603      aStarAlgorithm [4]
+               12.14    0.00  160601/160603      etext [1]
+[2]     96.5   12.14    0.00  160603         randomGenerate [2]
+-----------------------------------------------
+                                                 <spontaneous>
+[3]      0.7    0.09    0.00                 main [3]
+-----------------------------------------------
+                                  12             aStarAlgorithm [4]
+[4]      0.3    0.01    0.03       0+12      aStarAlgorithm [4]
+                0.03    0.00   80686/80686       generateNextStates [7]
+                0.00    0.00       2/160603      randomGenerate [2]
+                0.00    0.00       1/168693      compareGameStates [11]
+                                  12             aStarAlgorithm [4]
+-----------------------------------------------
+                0.03    0.00   70588/70588       etext [1]
+[5]      0.3    0.03    0.00   70588         moveRight [5]
+                0.00    0.00  363594/1421425     mergeTilesHelper [10]
+-----------------------------------------------
+                0.03    0.00   71523/71523       etext [1]
+[6]      0.3    0.03    0.00   71523         moveDown [6]
+                0.00    0.00  351896/1421425     mergeTilesHelper [10]
+-----------------------------------------------
+                0.03    0.00   80686/80686       aStarAlgorithm [4]
+[7]      0.2    0.03    0.00   80686         generateNextStates [7]
+-----------------------------------------------
+                0.02    0.00   69653/69653       etext [1]
+[8]      0.2    0.02    0.00   69653         moveLeft [8]
+-----------------------------------------------
+                0.01    0.00   70754/70754       etext [1]
+[9]      0.1    0.01    0.00   70754         moveUp [9]
+                0.00    0.00  353016/1421425     mergeTilesHelper [10]
+-----------------------------------------------
+                0.00    0.00  351896/1421425     moveDown [6]
+                0.00    0.00  352919/1421425     displayGrid [12]
+                0.00    0.00  353016/1421425     moveUp [9]
+                0.00    0.00  363594/1421425     moveRight [5]
+[10]     0.1    0.01    0.00 1421425         mergeTilesHelper [10]
+-----------------------------------------------
+                0.00    0.00       1/168693      aStarAlgorithm [4]
+                0.01    0.00  168692/168693      etext [1]
+[11]     0.1    0.01    0.00  168693         compareGameStates [11]
+-----------------------------------------------
+                                                 <spontaneous>
+[12]     0.0    0.00    0.00                 displayGrid [12]
+                0.00    0.00  352919/1421425     mergeTilesHelper [10]
+-----------------------------------------------
+
+Index by function name
+
+   [4] aStarAlgorithm          [3] main                    [5] moveRight
+  [11] compareGameStates      [10] mergeTilesHelper        [9] moveUp
+   [1] etext                   [6] moveDown                [2] randomGenerate
+   [7] generateNextStates      [8] moveLeft
