@@ -3,7 +3,7 @@
 ## Tutorials 1 to 7
 ### OpenMP Parallelization using multi-thread approach
 ```
-**gcc -fopenmp -g file.c -o file -lm**
+gcc -fopenmp -g file.c -o file -lm
 ```
 
 ## Tutorials 8 to 12
